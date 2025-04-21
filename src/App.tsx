@@ -14,7 +14,7 @@ import { createEventModalPlugin } from "@schedule-x/event-modal";
 
 import "@schedule-x/theme-default/dist/index.css";
 import { useEffect, useState } from "react";
-import { fetchEvents, addEvent } from "./api";
+import { fetchEvents, addEvent, updateEvent } from "./api";
 //@ts-ignore
 import type { CalendarEvent } from "@schedule-x/calendar";
 import EventCreateModal from "./components/EventCreateModal";
@@ -33,23 +33,40 @@ function CalendarApp() {
   const [eventStartTime, setEventStartTime] = useState("");
   const [eventEndTime, setEventEndTime] = useState("");
   const [eventAllDay, setEventAllDay] = useState(false);
+  const [currentEventId, setCurrentEventId] = useState<string | null>(null);
 
-  // Handle creating event from modal
+  // Handle creating or updating event from modal
   const handleCreateEvent = async () => {
     if (!eventTitle || !eventStartTime) return;
 
     try {
-      const newEvent = {
-        id: String(Date.now()),
-        title: eventTitle,
-        start: eventStartTime,
-        end: eventEndTime || eventStartTime,
-        allDay: eventAllDay,
-      };
+      if (currentEventId) {
+        // Update existing event
+        const updatedEvent = {
+          id: currentEventId,
+          title: eventTitle,
+          start: eventStartTime,
+          end: eventEndTime || eventStartTime,
+          allDay: eventAllDay,
+        };
 
-      // Add to API and calendar
-      const savedEvent = await addEvent(newEvent);
-      eventsService.add(savedEvent);
+        // Update in API and calendar
+        const savedEvent = await updateEvent(updatedEvent);
+        eventsService.update(savedEvent);
+      } else {
+        // Create new event
+        const newEvent = {
+          id: String(Date.now()),
+          title: eventTitle,
+          start: eventStartTime,
+          end: eventEndTime || eventStartTime,
+          allDay: eventAllDay,
+        };
+
+        // Add to API and calendar
+        const savedEvent = await addEvent(newEvent);
+        eventsService.add(savedEvent);
+      }
 
       // Reset form
       setShowModal(false);
@@ -57,8 +74,9 @@ function CalendarApp() {
       setEventStartTime("");
       setEventEndTime("");
       setEventAllDay(false);
+      setCurrentEventId(null);
     } catch (error) {
-      console.error("Failed to create event:", error);
+      console.error("Failed to create/update event:", error);
     }
   };
 
@@ -69,6 +87,7 @@ function CalendarApp() {
     setEventStartTime("");
     setEventEndTime("");
     setEventAllDay(false);
+    setCurrentEventId(null);
   };
 
   // Load events on mount
@@ -109,6 +128,34 @@ function CalendarApp() {
     ],
     // Add callbacks for double-click functionality
     callbacks: {
+      // Click on an event to edit it
+      onEventClick: (calendarEvent) => {
+        // Format dates for the form
+        const startDate = new Date(calendarEvent.start);
+        const endDate = calendarEvent.end
+          ? new Date(calendarEvent.end)
+          : new Date(startDate);
+
+        // Format dates in YYYY-MM-DD HH:mm format
+        const formatDate = (date: Date) => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          const hours = String(date.getHours()).padStart(2, "0");
+          const minutes = String(date.getMinutes()).padStart(2, "0");
+
+          return `${year}-${month}-${day} ${hours}:${minutes}`;
+        };
+
+        // Set form values and show modal
+        setEventTitle(calendarEvent.title || "");
+        setEventStartTime(formatDate(startDate));
+        setEventEndTime(formatDate(endDate));
+        setEventAllDay(calendarEvent.allDay || false);
+        setCurrentEventId(calendarEvent.id?.toString() || null);
+        setShowModal(true);
+      },
+
       // Double-click in week/day view to create event
       onDoubleClickDateTime: (dateTime) => {
         // Parse the datetime
@@ -116,9 +163,15 @@ function CalendarApp() {
         const endDate = new Date(startDate);
         endDate.setHours(startDate.getHours() + 1);
 
-        // Format dates for the form
-        const startFormatted = dateTime;
-        // Format correctly as YYYY-MM-DD HH:MM
+        // Format dates for the form using YYYY-MM-DD HH:mm format
+        const startYear = startDate.getFullYear();
+        const startMonth = String(startDate.getMonth() + 1).padStart(2, "0");
+        const startDay = String(startDate.getDate()).padStart(2, "0");
+        const startHours = String(startDate.getHours()).padStart(2, "0");
+        const startMinutes = String(startDate.getMinutes()).padStart(2, "0");
+
+        const startFormatted = `${startYear}-${startMonth}-${startDay} ${startHours}:${startMinutes}`;
+
         const endFormatted = `${endDate.getFullYear()}-${String(
           endDate.getMonth() + 1
         ).padStart(2, "0")}-${String(endDate.getDate()).padStart(
@@ -133,15 +186,26 @@ function CalendarApp() {
         setEventStartTime(startFormatted);
         setEventEndTime(endFormatted);
         setEventAllDay(false);
+        setCurrentEventId(null);
         setShowModal(true);
       },
       // Double-click in month view to create event
       onDoubleClickDate: (date) => {
+        // Parse the date
+        const dateObj = new Date(date);
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const day = String(dateObj.getDate()).padStart(2, "0");
+
+        // Format as YYYY-MM-DD
+        const formattedDate = `${year}-${month}-${day}`;
+
         // Set form values for all-day event and show modal
         setEventTitle("");
-        setEventStartTime(date);
-        setEventEndTime(date);
+        setEventStartTime(formattedDate);
+        setEventEndTime(formattedDate);
         setEventAllDay(true);
+        setCurrentEventId(null);
         setShowModal(true);
       },
     },
@@ -152,21 +216,23 @@ function CalendarApp() {
   });
 
   return (
-    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
+    <div>
       <ScheduleXCalendar calendarApp={calendar} />
 
-      {/* Event Creation Modal */}
+      {/* Event Creation/Edit Modal */}
       <EventCreateModal
         show={showModal}
         onClose={handleCloseModal}
         eventTitle={eventTitle}
         setEventTitle={setEventTitle}
         eventStartTime={eventStartTime}
+        setEventStartTime={setEventStartTime}
         eventEndTime={eventEndTime}
         setEventEndTime={setEventEndTime}
         eventAllDay={eventAllDay}
         setEventAllDay={setEventAllDay}
         onCreateEvent={handleCreateEvent}
+        isEditing={currentEventId !== null}
       />
     </div>
   );
