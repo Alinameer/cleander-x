@@ -30,6 +30,7 @@ function CalendarApp() {
   // Modal state for creating events
   const [showModal, setShowModal] = useState(false);
   const [eventTitle, setEventTitle] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
   const [eventStartTime, setEventStartTime] = useState("");
   const [eventEndTime, setEventEndTime] = useState("");
   const [eventAllDay, setEventAllDay] = useState(false);
@@ -45,6 +46,7 @@ function CalendarApp() {
         const updatedEvent = {
           id: currentEventId,
           title: eventTitle,
+          description: eventDescription,
           start: eventStartTime,
           end: eventEndTime || eventStartTime,
           allDay: eventAllDay,
@@ -58,6 +60,7 @@ function CalendarApp() {
         const newEvent = {
           id: String(Date.now()),
           title: eventTitle,
+          description: eventDescription,
           start: eventStartTime,
           end: eventEndTime || eventStartTime,
           allDay: eventAllDay,
@@ -71,6 +74,7 @@ function CalendarApp() {
       // Reset form
       setShowModal(false);
       setEventTitle("");
+      setEventDescription("");
       setEventStartTime("");
       setEventEndTime("");
       setEventAllDay(false);
@@ -84,6 +88,7 @@ function CalendarApp() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEventTitle("");
+    setEventDescription("");
     setEventStartTime("");
     setEventEndTime("");
     setEventAllDay(false);
@@ -126,36 +131,8 @@ function CalendarApp() {
       currentTime,
       eventModal,
     ],
-    // Add callbacks for double-click functionality
+    // Add callbacks for creating events
     callbacks: {
-      // Click on an event to edit it
-      onEventClick: (calendarEvent) => {
-        // Format dates for the form
-        const startDate = new Date(calendarEvent.start);
-        const endDate = calendarEvent.end
-          ? new Date(calendarEvent.end)
-          : new Date(startDate);
-
-        // Format dates in YYYY-MM-DD HH:mm format
-        const formatDate = (date: Date) => {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, "0");
-          const day = String(date.getDate()).padStart(2, "0");
-          const hours = String(date.getHours()).padStart(2, "0");
-          const minutes = String(date.getMinutes()).padStart(2, "0");
-
-          return `${year}-${month}-${day} ${hours}:${minutes}`;
-        };
-
-        // Set form values and show modal
-        setEventTitle(calendarEvent.title || "");
-        setEventStartTime(formatDate(startDate));
-        setEventEndTime(formatDate(endDate));
-        setEventAllDay(calendarEvent.allDay || false);
-        setCurrentEventId(calendarEvent.id?.toString() || null);
-        setShowModal(true);
-      },
-
       // Double-click in week/day view to create event
       onDoubleClickDateTime: (dateTime) => {
         // Parse the datetime
@@ -183,6 +160,7 @@ function CalendarApp() {
 
         // Set form values and show modal
         setEventTitle("");
+        setEventDescription("");
         setEventStartTime(startFormatted);
         setEventEndTime(endFormatted);
         setEventAllDay(false);
@@ -202,6 +180,7 @@ function CalendarApp() {
 
         // Set form values for all-day event and show modal
         setEventTitle("");
+        setEventDescription("");
         setEventStartTime(formattedDate);
         setEventEndTime(formattedDate);
         setEventAllDay(true);
@@ -225,6 +204,8 @@ function CalendarApp() {
         onClose={handleCloseModal}
         eventTitle={eventTitle}
         setEventTitle={setEventTitle}
+        eventDescription={eventDescription}
+        setEventDescription={setEventDescription}
         eventStartTime={eventStartTime}
         setEventStartTime={setEventStartTime}
         eventEndTime={eventEndTime}

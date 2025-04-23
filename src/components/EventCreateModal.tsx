@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Group, Input } from "../components/Input";
 
 // Event Creation Modal Component
 interface EventCreateModalProps {
@@ -8,6 +9,8 @@ interface EventCreateModalProps {
   onClose: () => void;
   eventTitle: string;
   setEventTitle: (title: string) => void;
+  eventDescription: string;
+  setEventDescription: (description: string) => void;
   eventStartTime: string;
   setEventStartTime: (time: string) => void;
   eventEndTime: string;
@@ -23,6 +26,8 @@ function EventCreateModal({
   onClose,
   eventTitle,
   setEventTitle,
+  eventDescription,
+  setEventDescription,
   eventStartTime,
   setEventStartTime,
   eventEndTime,
@@ -177,6 +182,19 @@ function EventCreateModal({
             placeholder="Event title"
             autoFocus
           />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="event-description">Description</label>
+          <Group size="M" variant="PresentationStyle">
+            <Input
+              id="event-description"
+              type="text"
+              value={eventDescription}
+              onChange={(e) => setEventDescription(e.target.value)}
+              placeholder="Event description"
+            />
+          </Group>
         </div>
 
         <div className="form-group">
