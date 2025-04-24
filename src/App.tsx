@@ -109,7 +109,6 @@ function CalendarApp() {
         console.error("Failed to load events:", error);
       }
     };
-    /* asd */
     loadEvents();
   }, [eventsService]);
 
