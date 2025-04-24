@@ -109,7 +109,7 @@ function CalendarApp() {
         console.error("Failed to load events:", error);
       }
     };
-
+    /* asd */
     loadEvents();
   }, [eventsService]);
 
@@ -190,7 +190,7 @@ function CalendarApp() {
     },
     // Fix month view configuration
     monthGridOptions: {
-      nEventsPerDay: 4, // Show up to 4 events per day before showing +more
+      nEventsPerDay: 4,
     },
   });
 
